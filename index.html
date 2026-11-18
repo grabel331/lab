@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Laboratório Restrito</title>
-    <!-- Estilos simples -->
     <style>
         body { font-family: sans-serif; background: #0d1117; color: #c9d1d9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .hidden { display: none !important; }
@@ -12,7 +11,6 @@
         button { width: 100%; padding: 10px; background: #238636; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         button:hover { background: #2ea043; }
     </style>
-    <!-- Importando a biblioteca do Supabase via CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -20,22 +18,21 @@
     <!-- TELA DE LOGIN -->
     <div id="login-screen" class="card">
         <h2>🔒 Área Restrita</h2>
-        <div id="login-form">
+        <form id="login-form">
             <input type="email" id="email" placeholder="Seu e-mail" required>
             <input type="password" id="password" placeholder="Sua senha" required>
-            <button id="login-btn">Entrar</button>
-        </div>
+            <button type="submit">Entrar</button>
+        </form>
         <p id="error-msg" style="color: #f85149; font-size: 0.9rem; margin-top: 10px;"></p>
     </div>
 
-    <!-- CONTEÚDO PROTEGIDO DO SITE -->
+    <!-- CONTEÚDO PROTEGIDO -->
     <div id="protected-content" class="hidden card" style="width: 400px; text-align: center;">
         <h1>Hello World</h1>
         <p>Bem-vindo ao seu laboratório!</p>
         <button id="logout-btn" style="background: #da3633; width: auto; padding: 8px 16px; margin-top: 1rem;">Sair</button>
     </div>
 
-    <!-- SCRIPT DE AUTENTICAÇÃO -->
     <script>
         const SUPABASE_URL = 'https://xcdbpzdmydpfjietcgau.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_-07_WHRQc0I6qYtMaNl6jw_thcB-3YG';
@@ -44,33 +41,29 @@
 
         const loginScreen = document.getElementById('login-screen');
         const protectedContent = document.getElementById('protected-content');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const loginBtn = document.getElementById('login-btn');
+        const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
         const logoutBtn = document.getElementById('logout-btn');
 
-        // 1. Verificar sessão ativa
         async function checkUser() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                loginScreen.classList.add('hidden');
-                protectedContent.classList.remove('hidden');
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    loginScreen.classList.add('hidden');
+                    protectedContent.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error(e);
             }
         }
         checkUser();
 
-        // 2. Ação de Login por clique
-        loginBtn.addEventListener('click', async () => {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             errorMsg.textContent = '';
-            
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
 
-            if (!email || !password) {
-                errorMsg.textContent = 'Preencha todos os campos.';
-                return;
-            }
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
 
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
@@ -85,7 +78,6 @@
             }
         });
 
-        // 3. Ação de Logout
         logoutBtn.addEventListener('click', async () => {
             await supabase.auth.signOut();
             window.location.reload();
