@@ -1,2 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Laboratório Restrito</title>
+    <!-- Estilos simples -->
+    <style>
+        body { font-family: sans-serif; background: #0d1117; color: #c9d1d9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .hidden { display: none !important; }
+        .card { background: #161b22; padding: 2rem; border-radius: 8px; border: 1px solid #30363d; width: 300px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #238636; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #2ea043; }
+    </style>
+    <!-- Importando a biblioteca do Supabase via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
 
-<htnml>  teste </htnml>
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="card">
+        <h2>🔒 Área Restrita</h2>
+        <form id="login-form">
+            <input type="email" id="email" placeholder="Seu e-mail" required>
+            <input type="password" id="password" placeholder="Sua senha" required>
+            <button type="submit">Entrar</button>
+        </form>
+        <p id="error-msg" style="color: #f85149; font-size: 0.9rem;"></p>
+    </div>
+-
+        }
+        checkUser();
+
+        // 2. Ação de Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMsg.textContent = '';
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                errorMsg.textContent = 'E-mail ou senha inválidos.';
+            } else {
+                loginScreen.classList.add('hidden');
+                protectedContent.classList.remove('hidden');
+            }
+        });
+
+        // 3. Ação de Logout
+        logoutBtn.addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>
