@@ -5,7 +5,6 @@
     <title>Laboratório Restrito</title>
     <style>
         body { font-family: sans-serif; background: #0d1117; color: #c9d1d9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .hidden { display: none !important; }
         .card { background: #161b22; padding: 2rem; border-radius: 8px; border: 1px solid #30363d; width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         input { width: 100%; padding: 10px; margin: 10px 0; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 10px; background: #238636; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -15,47 +14,32 @@
 </head>
 <body>
 
-    <!-- TELA DE LOGIN -->
     <div id="login-screen" class="card">
-        <h2>🔒 0 Área Restrita</h2>
+        <h2>🔒 Área Restrita</h2>
         <form id="login-form">
-            <input type="email" id="email" placeholder="Seu e-mail" required value="">
+            <input type="email" id="email" placeholder="Seu e-mail" required value="1mp111@proton.me">
             <input type="password" id="password" placeholder="Sua senha" required>
             <button type="submit" id="submit-btn">Entrar</button>
         </form>
         <div id="error-msg"></div>
     </div>
 
-    <!-- CONTEÚDO PROTEGIDO DO SITE -->
-    <div id="protected-content" class="hidden">
-        <h1>Bem-vindo ao seu Laboratório!</h1>
-        <p>Aqui fica todo o conteúdo secreto do seu site...</p>
-        <button id="logout-btn" style="background: #da3633; width: auto; padding: 8px 16px;">Sair</button>
-    </div>
-
-    <!-- SCRIPT DE AUTENTICAÇÃO DIRETA (REST API) -->
     <script>
         const SUPABASE_URL = 'https://xcdbpzdmydpfjietcgau.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_-07_WHRQc0I6qYtMaNl6jw_thcB-3YG';
 
-        const loginScreen = document.getElementById('login-screen');
-        const protectedContent = document.getElementById('protected-content');
+        // Se já estiver logado, vai direto para o conteúdo secreto
+        if (localStorage.getItem('supabase_token')) {
+            carregarDashboard();
+        }
+
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
         const submitBtn = document.getElementById('submit-btn');
-        const logoutBtn = document.getElementById('logout-btn');
 
-        // Verificar se já tem token salvo no navegador
-        if (localStorage.getItem('supabase_token')) {
-            loginScreen.classList.add('hidden');
-            protectedContent.classList.remove('hidden');
-        }
-
-        // Ação de Login
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorMsg.style.display = 'none';
-            errorMsg.textContent = '';
             submitBtn.textContent = 'Entrando...';
             submitBtn.disabled = true;
             
@@ -80,8 +64,7 @@
 
                 if (data.access_token) {
                     localStorage.setItem('supabase_token', data.access_token);
-                    loginScreen.classList.add('hidden');
-                    protectedContent.classList.remove('hidden');
+                    carregarDashboard();
                 }
             } catch (err) {
                 errorMsg.style.display = 'block';
@@ -91,11 +74,18 @@
             }
         });
 
-        // Ação de Logout
-        logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('supabase_token');
-            window.location.reload();
-        });
+        async function carregarDashboard() {
+            try {
+                const res = await fetch('dashboard.html');
+                if (!res.ok) throw new Error('Erro ao carregar o conteúdo.');
+                const html = await res.text();
+                document.open();
+                document.write(html);
+                document.close();
+            } catch (err) {
+                alert('Erro ao carregar a página protegida.');
+            }
+        }
     </script>
 </body>
 </html>
