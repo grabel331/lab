@@ -6,12 +6,12 @@
     <style>
         body { font-family: sans-serif; background: #0d1117; color: #c9d1d9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .hidden { display: none !important; }
-        .card { background: #161b22; padding: 2rem; border-radius: 8px; border: 1px solid #30363d; width: 300px; box-sizing: border-box; }
+        .card { background: #161b22; padding: 2rem; border-radius: 8px; border: 1px solid #30363d; width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         input { width: 100%; padding: 10px; margin: 10px 0; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 10px; background: #238636; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         button:hover { background: #2ea043; }
+        #error-msg { color: #f85149; font-size: 0.85rem; margin-top: 10px; word-break: break-all; background: #221a1a; padding: 8px; border-radius: 4px; border: 1px solid #f85149; display: none; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -19,67 +19,81 @@
     <div id="login-screen" class="card">
         <h2>🔒 Área Restrita</h2>
         <form id="login-form">
-            <input type="email" id="email" placeholder="Seu e-mail" required>
+            <input type="email" id="email" placeholder="Seu e-mail" required value="">
             <input type="password" id="password" placeholder="Sua senha" required>
-            <button type="submit">Entrar</button>
+            <button type="submit" id="submit-btn">Entrar</button>
         </form>
-        <p id="error-msg" style="color: #f85149; font-size: 0.9rem; margin-top: 10px;"></p>
+        <div id="error-msg"></div>
     </div>
 
-    <!-- CONTEÚDO PROTEGIDO -->
-    <div id="protected-content" class="hidden card" style="width: 400px; text-align: center;">
-        <h1>Hello World</h1>
-        <p>Bem-vindo ao seu laboratório!</p>
-        <button id="logout-btn" style="background: #da3633; width: auto; padding: 8px 16px; margin-top: 1rem;">Sair</button>
+    <!-- CONTEÚDO PROTEGIDO DO SITE -->
+    <div id="protected-content" class="hidden">
+        <h1>Bem-vindo ao seu Laboratório!</h1>
+        <p>Aqui fica todo o conteúdo secreto do seu site...</p>
+        <button id="logout-btn" style="background: #da3633; width: auto; padding: 8px 16px;">Sair</button>
     </div>
 
+    <!-- SCRIPT DE AUTENTICAÇÃO DIRETA (REST API) -->
     <script>
         const SUPABASE_URL = 'https://xcdbpzdmydpfjietcgau.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_-07_WHRQc0I6qYtMaNl6jw_thcB-3YG';
-
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const loginScreen = document.getElementById('login-screen');
         const protectedContent = document.getElementById('protected-content');
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
+        const submitBtn = document.getElementById('submit-btn');
         const logoutBtn = document.getElementById('logout-btn');
 
-        async function checkUser() {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session) {
-                    loginScreen.classList.add('hidden');
-                    protectedContent.classList.remove('hidden');
-                }
-            } catch (e) {
-                console.error(e);
-            }
+        // Verificar se já tem token salvo no navegador
+        if (localStorage.getItem('supabase_token')) {
+            loginScreen.classList.add('hidden');
+            protectedContent.classList.remove('hidden');
         }
-        checkUser();
 
+        // Ação de Login
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            errorMsg.style.display = 'none';
             errorMsg.textContent = '';
-
+            submitBtn.textContent = 'Entrando...';
+            submitBtn.disabled = true;
+            
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
 
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
+            try {
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({ email, password })
+                });
 
-            if (error) {
-                errorMsg.textContent = 'E-mail ou senha inválidos.';
-            } else {
-                loginScreen.classList.add('hidden');
-                protectedContent.classList.remove('hidden');
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error_description || data.msg || data.error || 'Credenciais inválidas');
+                }
+
+                if (data.access_token) {
+                    localStorage.setItem('supabase_token', data.access_token);
+                    loginScreen.classList.add('hidden');
+                    protectedContent.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = 'Erro: ' + err.message;
+                submitBtn.textContent = 'Entrar';
+                submitBtn.disabled = false;
             }
         });
 
-        logoutBtn.addEventListener('click', async () => {
-            await supabase.auth.signOut();
+        // Ação de Logout
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('supabase_token');
             window.location.reload();
         });
     </script>
